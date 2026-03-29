@@ -5,6 +5,7 @@ from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
 import os
+PORT = int(os.environ.get("PORT", 8000))
 import logging
 import io
 import csv
