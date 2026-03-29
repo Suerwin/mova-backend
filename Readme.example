@@ -1,0 +1,9 @@
+# Environment Variables Template - Backend
+# Copy this to .env and fill in your values
+
+# MongoDB Connection (Get from MongoDB Atlas - free tier available)
+MONGO_URL=mongodb+srv://your_username:your_password@cluster0.xxxxx.mongodb.net/?retryWrites=true&w=majority
+DB_NAME=mova_db
+
+# JWT Secret (Generate a random 32+ character string)
+JWT_SECRET=your-super-secret-jwt-key-at-least-32-characters-long
