@@ -5,6 +5,7 @@ from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
 import os
+MONGO_URL = os.getenv("MONGO_URL")
 import uvicorn
 from fastapi import FastAPI
 app = FastAPI()
