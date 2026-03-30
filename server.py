@@ -5,12 +5,15 @@ from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
 import os
-import os
 import uvicorn
+from fastapi import FastAPI
+app = FastAPI()
+@app.get("/")
+def home():
+    return {"status": "ok"}
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 8000))
+    port = int(os.environ.get("PORT", 8080))
     uvicorn.run("server:app", host="0.0.0.0", port=port)
-PORT = int(os.environ.get("PORT", 8000))
 import logging
 import io
 import csv
