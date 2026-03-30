@@ -81,30 +81,35 @@ def root():
 @api_router.post("/auth/register")
 async def register(data: UserCreate):
 
-    # cek email sudah dipakai
-    user_exist = await db.users.find_one({"email": data.email})
-    if user_exist:
-        raise HTTPException(status_code=400, detail="Email sudah terdaftar")
+    try:
+        user_exist = await db.users.find_one({"email": data.email})
+        if user_exist:
+            raise HTTPException(status_code=400, detail="Email sudah terdaftar")
 
-    user_id = str(uuid.uuid4())
+        user_id = str(uuid.uuid4())
 
-    user = {
-        "id": user_id,
-        "email": data.email,
-        "name": data.name,
-        "password": hash_password(data.password),
-        "created_at": datetime.utcnow()
-    }
+        user = {
+            "id": user_id,
+            "email": data.email,
+            "name": data.name,
+            "password": hash_password(data.password),
+            "created_at": datetime.utcnow()
+        }
 
-    await db.users.insert_one(user)
+        await db.users.insert_one(user)
 
-    token = create_token(user_id)
+        token = create_token(user_id)
 
-    return {
-        "access_token": token,
-        "token_type": "bearer"
-    }
+        return {
+            "access_token": token,
+            "token_type": "bearer"
+        }
 
+    except Exception as e:
+        import traceback
+        print("REGISTER ERROR:", e)
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
 # ================= LOGIN =================
 @api_router.post("/auth/login")
 async def login(data: UserLogin):
