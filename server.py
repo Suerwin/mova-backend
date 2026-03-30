@@ -17,6 +17,12 @@ if __name__ == "__main__":
 import logging
 import io
 import csv
+from pymongo import MongoClient
+client = MongoClient(
+    MONGO_URL,
+    tls=True
+)
+db = client["mova"]
 from pathlib import Path
 from pydantic import BaseModel, Field, EmailStr
 from typing import List, Optional
