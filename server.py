@@ -5,14 +5,11 @@ from motor.motor_asyncio import AsyncIOMotorClient
 from dotenv import load_dotenv
 from pathlib import Path
 from pydantic import BaseModel, EmailStr
-from typing import List, Optional
 from datetime import datetime, timedelta
 import os
 import uuid
 import jwt
 import bcrypt
-import random
-import string
 
 # ================= ENV =================
 ROOT_DIR = Path(__file__).parent
@@ -43,15 +40,10 @@ class UserCreate(BaseModel):
     email: EmailStr
     password: str
     name: str
-    serial_number: str
 
 class UserLogin(BaseModel):
     email: EmailStr
     password: str
-
-class TokenResponse(BaseModel):
-    access_token: str
-    token_type: str = "bearer"
 
 # ================= HELPERS =================
 def hash_password(password: str):
@@ -67,19 +59,16 @@ def create_token(user_id: str):
     }
     return jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
 
-def generate_serial():
-    chars = string.ascii_uppercase + string.digits
-    parts = [''.join(random.choices(chars, k=4)) for _ in range(3)]
-    return f"MOVA-{parts[0]}-{parts[1]}-{parts[2]}"
-
 # ================= AUTH =================
 async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
     token = credentials.credentials
     payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
+
     user = await db.users.find_one({"id": payload["user_id"]})
 
     if not user:
         raise HTTPException(status_code=401, detail="User tidak valid")
+
     return user
 
 # ================= ROUTES =================
@@ -91,13 +80,10 @@ def root():
 # -------- REGISTER --------
 @api_router.post("/auth/register")
 async def register(data: UserCreate):
-    serial = await db.serial_numbers.find_one({"serial_number": data.serial_number})
 
-    if not serial:
-        raise HTTPException(status_code=400, detail="Serial tidak ditemukan")
-
-    if serial.get("is_used"):
-        raise HTTPException(status_code=400, detail="Serial sudah dipakai")
+    user_exist = await db.users.find_one({"email": data.email})
+    if user_exist:
+        raise HTTPException(status_code=400, detail="Email sudah terdaftar")
 
     user_id = str(uuid.uuid4())
 
@@ -106,20 +92,10 @@ async def register(data: UserCreate):
         "email": data.email,
         "name": data.name,
         "password": hash_password(data.password),
-        "serial_number": data.serial_number,
         "created_at": datetime.utcnow()
     }
 
     await db.users.insert_one(user)
-
-    await db.serial_numbers.update_one(
-        {"serial_number": data.serial_number},
-        {"$set": {
-            "is_used": True,
-            "used_at": datetime.utcnow(),
-            "used_by": data.email
-        }}
-    )
 
     token = create_token(user_id)
 
@@ -128,46 +104,23 @@ async def register(data: UserCreate):
 # -------- LOGIN --------
 @api_router.post("/auth/login")
 async def login(data: UserLogin):
+
     user = await db.users.find_one({"email": data.email})
 
     if not user or not verify_password(data.password, user["password"]):
         raise HTTPException(status_code=401, detail="Login gagal")
 
     token = create_token(user["id"])
+
     return {"access_token": token, "token_type": "bearer"}
 
-# -------- GENERATE SERIAL (ADMIN SIMPLE VERSION) --------
-@api_router.post("/serial/generate")
-async def generate_serials(count: int = 1):
-    result = []
-
-    for _ in range(min(count, 50)):
-        serial = generate_serial()
-
-        while await db.serial_numbers.find_one({"serial_number": serial}):
-            serial = generate_serial()
-
-        data = {
-            "serial_number": serial,
-            "is_used": False,
-            "created_at": datetime.utcnow()
-        }
-
-        await db.serial_numbers.insert_one(data)
-        result.append(data)
-
-    return result
-
-# -------- CHECK SERIAL --------
-@api_router.get("/serial/check/{serial}")
-async def check_serial(serial: str):
-    data = await db.serial_numbers.find_one({"serial_number": serial})
-
-    if not data:
-        return {"valid": False}
-
+# -------- GET PROFILE --------
+@api_router.get("/auth/me")
+async def me(user=Depends(get_current_user)):
     return {
-        "valid": not data.get("is_used", False)
+        "id": user["id"],
+        "email": user["email"],
+        "name": user["name"]
     }
 
 # ================= APP SETUP =================
