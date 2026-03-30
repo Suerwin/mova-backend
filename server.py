@@ -6,6 +6,9 @@ from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
 import os
 MONGO_URL = os.getenv("MONGO_URL")
+client = MongoClient(MONGO_URL)
+db = client["mova"]
+MONGO_URL = os.getenv("MONGO_URL")
 import uvicorn
 from fastapi import FastAPI
 app = FastAPI()
