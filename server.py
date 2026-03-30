@@ -77,10 +77,11 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
 def root():
     return {"status": "MOVA API OK"}
 
-# -------- REGISTER --------
+# ================= REGISTER =================
 @api_router.post("/auth/register")
 async def register(data: UserCreate):
 
+    # cek email sudah dipakai
     user_exist = await db.users.find_one({"email": data.email})
     if user_exist:
         raise HTTPException(status_code=400, detail="Email sudah terdaftar")
@@ -99,9 +100,12 @@ async def register(data: UserCreate):
 
     token = create_token(user_id)
 
-    return {"access_token": token, "token_type": "bearer"}
+    return {
+        "access_token": token,
+        "token_type": "bearer"
+    }
 
-# -------- LOGIN --------
+# ================= LOGIN =================
 @api_router.post("/auth/login")
 async def login(data: UserLogin):
 
@@ -112,9 +116,12 @@ async def login(data: UserLogin):
 
     token = create_token(user["id"])
 
-    return {"access_token": token, "token_type": "bearer"}
+    return {
+        "access_token": token,
+        "token_type": "bearer"
+    }
 
-# -------- GET PROFILE --------
+# ================= PROFILE =================
 @api_router.get("/auth/me")
 async def me(user=Depends(get_current_user)):
     return {
