@@ -1,5 +1,13 @@
 from pymongo import MongoClient
 import os
+# ambil dari ENV
+MONGO_URL = os.getenv("MONGO_URL")
+# ⚡ BONUS SAFETY CHECK (taruh DI SINI)
+if not MONGO_URL:
+    raise Exception("MONGO_URL belum diset di ENV")
+# koneksi mongo
+client = MongoClient(MONGO_URL)
+db = client["mova"]  # contoh nama database
 from fastapi import FastAPI, APIRouter, HTTPException, Depends, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi.responses import StreamingResponse
